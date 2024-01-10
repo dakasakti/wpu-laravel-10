@@ -6,9 +6,9 @@
             <div class="col-lg-8">
                 <h1 class="my-3">{{ $post->title }}</h1>
 
-                <a href="/dashboard/posts" class="btn btn-success"><span data-feather="arrow-left"></span> Back to all my posts</a>
-                <a href="/dashboard/posts/{{ $post->slug }}/edit" class="btn btn-warning"><span data-feather="edit"></span> Edit</a>
-                <form action="/dashboard/posts/{{ $post->slug }}" method="POST" class="d-inline">
+                <a href="{{ route('posts.index') }}" class="btn btn-success"><span data-feather="arrow-left"></span> Back to all my posts</a>
+                <a href="{{ route('posts.edit', $post) }}" class="btn btn-warning"><span data-feather="edit"></span> Edit</a>
+                <form action="{{ route('posts.destroy', $post) }}" method="POST" class="d-inline">
                     @method("DELETE")
                     @csrf
                     <button class="btn btn-danger" onclick="return confirm('Are you sure?')">

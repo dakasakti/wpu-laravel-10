@@ -34,12 +34,25 @@ Route::get('/', function () {
 });
 
 Route::get('/about', function () {
+    $authors = [
+        [
+            "name" => "Arman Dwi Pangestu",
+            "email" => "armandwi.pangestu7@gmail.com",
+            "image" => "me-circle.png",
+            'link' => 'https://github.com/armandwipangestu'
+        ],
+        [
+            "name" => "Daka",
+            "email" => "dakasakti.dev@gmail.com",
+            "image" => "dakasakti.jpg",
+            "link" => 'https://github.com/dakasakti',
+        ],
+    ];
+
     return view('about', [
         "title" => "About",
         "active" => "about",
-        "name" => "Arman Dwi Pangestu",
-        "email" => "armandwi.pangestu7@gmail.com",
-        "image" => "me-circle.png"
+        "authors" => $authors,
     ]);
 });
 

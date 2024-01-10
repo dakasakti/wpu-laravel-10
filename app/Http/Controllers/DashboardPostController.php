@@ -6,7 +6,8 @@ use App\Models\Post;
 use App\Models\Category;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use \Cviebrock\EloquentSluggable\Services\SlugService;
+use Cviebrock\EloquentSluggable\Services\SlugService;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardPostController extends Controller
@@ -19,7 +20,7 @@ class DashboardPostController extends Controller
     public function index()
     {
         return view('dashboard.posts.index', [
-            'posts' => Post::where('user_id', auth()->user()->id)->get()
+            'posts' => Post::where('user_id', auth()->id())->get()
         ]);
     }
 
@@ -46,21 +47,41 @@ class DashboardPostController extends Controller
         $validateData = $request->validate([
             'title' => 'required|max:255',
             'slug' => 'required|unique:posts',
-            'category_id' => 'required',
-            'image' => 'image|file|max:2048',
+            'category_id' => 'required|integer',
+            'image' => 'nullable|image|file|max:2048',
             'body' => 'required'
         ]);
 
-        if ($request->file('image')) {
-            $validateData['image'] = $request->file('image')->store('post-images');
+        $file = $validateData['image'] ?? null;
+        if ($file) {
+            // $imagePath = $request->file('image')->store('public/post-images');
+            $validateData['image'] = $this->storeFile($file, 'public/posts');
         }
 
-        $validateData['user_id'] = auth()->user()->id;
+        $validateData['user_id'] = auth()->id();
         $validateData['excerpt'] = Str::limit(strip_tags($request->body), 200);
 
         Post::create($validateData);
 
-        return redirect('/dashboard/posts')->with('success', 'New post has been added!');
+        return to_route('posts.index')->with('success', 'New post has been added!');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\UploadedFile  $file
+     * @param  string $path
+     * @param  string $type
+     * @return null|string
+     */
+    protected function storeFile(UploadedFile $file, $path = '', $type = 'public'): null|string
+    {
+        $filePath = Storage::putFile($path, $file, $type);
+        if (!$filePath) {
+            return null;
+        }
+
+        return str_replace('public/', '', $filePath);
     }
 
     /**
@@ -71,9 +92,18 @@ class DashboardPostController extends Controller
      */
     public function show(Post $post)
     {
+        $this->checkAccess($post);
+
         return view('dashboard.posts.show', [
             "post" => $post
         ]);
+    }
+
+    protected function checkAccess($data)
+    {
+        if ($data['user_id'] !== auth()->id()) {
+            abort(403);
+        }
     }
 
     /**
@@ -84,6 +114,8 @@ class DashboardPostController extends Controller
      */
     public function edit(Post $post)
     {
+        $this->checkAccess($post);
+
         return view('dashboard.posts.edit', [
             'post' => $post,
             'categories' => Category::all()
@@ -99,33 +131,35 @@ class DashboardPostController extends Controller
      */
     public function update(Request $request, Post $post)
     {
+        $this->checkAccess($post);
+
         $rules = [
             'title' => 'required|max:255',
+            'slug' => 'required|unique:posts,slug,' . $post->id,
             'category_id' => 'required',
-            'image' => 'image|file|max:2048',
+            'image' => 'nullable|image|file|max:2048',
             'body' => 'required'
         ];
 
-        if ($request->slug != $post->slug) {
-            $rules['slug'] = 'required|unique:posts';
-        }
-
         $validateData = $request->validate($rules);
 
-        if ($request->file('image')) {
-            if ($request->oldImage) {
-                Storage::delete($request->oldImage);
-            }
-            $validateData['image'] = $request->file('image')->store('post-images');
+        $file = $validateData['image'] ?? null;
+        if ($file) {
+            $validateData['image'] = $this->storeFile($file, 'public/posts');
         }
 
-        $validateData['user_id'] = auth()->user()->id;
+        $oldImagePath = $post->image;
+        if ($file && $oldImagePath) {
+            Storage::delete('public/' . $oldImagePath);
+        }
+
+        // $validateData['user_id'] = auth()->user()->id;
         $validateData['excerpt'] = Str::limit(strip_tags($request->body), 200);
 
-        Post::where('id', $post->id)
-            ->update($validateData);
+        // Post::where('id', $post->id)->update($validateData);
+        $post->update($validateData);
 
-        return redirect('/dashboard/posts')->with('success', 'Post has been updated!');
+        return to_route('posts.index')->with('success', 'Post has been updated!');
     }
 
     /**
@@ -136,13 +170,16 @@ class DashboardPostController extends Controller
      */
     public function destroy(Post $post)
     {
+        $this->checkAccess($post);
+
         if ($post->image) {
             Storage::delete($post->image);
         }
 
-        Post::destroy($post->id);
+        // Post::destroy($post->id);
+        $post->delete();
 
-        return redirect('/dashboard/posts')->with('success', 'Post has been deleted!');
+        return to_route('posts.index')->with('success', 'Post has been deleted!');
     }
 
     public function getSlug(Request $request)

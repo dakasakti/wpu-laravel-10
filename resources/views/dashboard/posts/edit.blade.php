@@ -6,7 +6,7 @@
     </div>
 
     <div class="col-lg-8">
-        <form action="/dashboard/posts/{{ $post->slug }}" method="POST" class="mb-5" enctype="multipart/form-data">
+        <form action="{{ route('posts.update', $post) }}" method="POST" class="mb-5" enctype="multipart/form-data">
             @method('PUT')
             @csrf
             <div class="mb-3">
@@ -49,9 +49,9 @@
                 <label for="image" class="form-label">Post Image</label>
                 <input type="hidden" name="oldImage" value="{{ $post->image }}">
                 @if ($post->image)
-                    <img src="{{ asset('storage/' . $post->image) }}" class="img-preview img-fluid mb-3 col-sm-5 d-block"/>
+                    <img src="{{ asset('storage/' . $post->image) }}" class="img-preview img-fluid mb-3 col-sm-5 d-block" alt=""/>
                 @else
-                    <img class="img-preview img-fluid mb-3 col-sm-5"/>
+                    <img class="img-preview img-fluid mb-3 col-sm-5" alt=""/>
                 @endif
                 <input class="form-control @error('image')
                     is-invalid

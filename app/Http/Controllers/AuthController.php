@@ -38,7 +38,10 @@ class AuthController extends Controller
         //$validatedData['password'] = bcrypt($validatedData['password']);
 
         // Menggunakan Hash
-        $validatedData['password'] = Hash::make($validatedData['password']);
+        // $validatedData['password'] = Hash::make($validatedData['password']);
+
+        // laravel-10 diperkenalkan casting hashed
+        // no-code
 
         User::create($validatedData);
 

@@ -12,7 +12,7 @@ class AuthorController extends Controller
         return view('authors', [
             'title' => 'Authors',
             "active" => "authors",
-            'authors' => User::all()
+            'authors' => User::latest()->get()
         ]);
     }
 
